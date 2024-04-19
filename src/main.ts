@@ -1,5 +1,18 @@
 import * as core from '@actions/core'
 import { wait } from './wait'
+import { graphql } from 'gql.tada'
+import { request } from 'graphql-request'
+const ProjectsQuery = graphql(`
+  query projects($after: String) {
+    projects(after: $after, first: 10) {
+      edges {
+        node {
+          id
+        }
+      }
+    }
+  }
+`)
 
 /**
  * The main function for the action.
@@ -7,6 +20,27 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
+    const { projects } = await request(
+      'https://backboard.railway.app/graphql/v2',
+      graphql(`
+        query projects {
+          projects {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+      `),
+      {},
+      {
+        Authorization: `Bearer be526a39-4c2a-4393-93e4-20ee53142b52`
+      }
+    )
+
+    console.dir({ projects }, { depth: 9 })
+
     const ms: string = core.getInput('milliseconds')
 
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
